@@ -12,7 +12,7 @@ st.set_page_config(page_title="BEM Tool – Final Version", layout="wide")
 sns.set(style="whitegrid")
 
 st.title("Building Energy Management Tool")
-st.markdown("**Supervised + Unsupervised DM** – Zhou et al., *Energy* 307 (2024)")
+st.markdown("**Supervised + Unsupervised DM** – Kelompok 7 | Data Mining., *Energy* (2025)")
 
 # Train Model Prediksi
 @st.cache_resource
@@ -208,4 +208,5 @@ with tab2:
         
 # Footer
 st.markdown("---")
+
 st.caption("Zhou, X., et al. (2024). Energy, 307, 132636. DOI: 10.1016/j.energy.2024.132636")

@@ -209,4 +209,5 @@ with tab2:
 # Footer
 st.markdown("---")
 
-st.caption("Zhou, X., et al. (2024). Energy, 307, 132636. DOI: 10.1016/j.energy.2024.132636")
+st.caption("Zakky Firdaus, Desmawan Tri Wibisono, Yunifer Yosef Silalahi. (2025). Energy, 307, 132636. DOI: 10.1016/j.energy.2024.132636")
+

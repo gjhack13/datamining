@@ -29,7 +29,11 @@ def train_model():
 
 model, data_train = train_model()
 
-tab1, tab2 = st.tabs(["Prediksi Konsumsi Energi", "Asesmen Performa (Clustering)"])
+tab1, tab2, tab3 = st.tabs([
+    "Prediksi Konsumsi Energi",
+    "Asesmen Performa (Clustering)",
+    "Optimalisasi RL"
+])
 
 # TAB 1 – PREDIKSI
 with tab1:
@@ -251,5 +255,6 @@ st.caption("Zhou, X., et al. (2024). Energy, 307, 132636. DOI: 10.1016/j.energy.
 st.markdown("---")
 
 st.caption("Zakky Firdaus, Desmawan Tri Wibisono, Yunifer Yosef Silalahi. (2025). Energy, 307, 132636. DOI: 10.1016/j.energy.2024.132636")
+
 
 

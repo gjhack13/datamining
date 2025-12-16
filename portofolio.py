@@ -209,52 +209,83 @@ with tab2:
         st.download_button("Download Hasil Clustering (CSV)", csv, "clustering_result.csv", "text/csv")
 
 
-# TAB 3 – OPTIMALISASI RL (TAMBAHAN BARU, SESUAI JURNAL)
+# TAB 3 – OPTIMALISASI RL (VERSI RINGAN, TIDAK PERLU INSTALL GYM)
 with tab3:
     st.header("Optimalisasi Energi dengan Reinforcement Learning (RL)")
-    st.write("Simulasi RL untuk atur setpoint HVAC & hemat energi (inspirasi Section 4.3 jurnal).")
+    st.write("**Inspirasi dari Section 4.3 jurnal Zhou et al. (2024):** RL digunakan untuk optimal control guna meningkatkan efficiency, demand flexibility, dan kenyamanan termal.")
 
-    # Simulasi sederhana RL (pakai Stable-Baselines3)
-    import gym
-    from stable_baselines3 import PPO
-    from stable_baselines3.common.env_util import make_vec_env
+    st.write("### Simulasi Sederhana RL (Q-Learning) untuk Atur Setpoint Suhu")
 
-    class BEMEnv(gym.Env):
-        def __init__(self):
-            self.action_space = gym.spaces.Box(low=-5, high=5, shape=(1,))  # atur delta suhu
-            self.observation_space = gym.spaces.Box(low=0, high=100, shape=(3,))  # suhu, occ, hum
-            self.current_step = 0
-            self.state = np.array([25.0, 50, 60])  # initial state
+    # Simulasi RL sederhana tanpa library eksternal
+    import random
 
-        def reset(self):
-            self.current_step = 0
-            self.state = np.array([25.0, 50, 60])
-            return self.state
+    # Parameter simulasi
+    episodes = 100
+    learning_rate = 0.1
+    discount_factor = 0.95
+    exploration_rate = 0.3
 
-        def step(self, action):
-            self.state[0] += action[0]  # ubah suhu
-            energy = 80 + 1.2*self.state[0] + 0.8*self.state[1] + 0.3*self.state[2]
-            reward = -energy  # minimize energi
-            done = self.current_step >= 10
-            self.current_step += 1
-            return self.state, reward, done, {}
+    # State: suhu ruangan (diskrit: 18, 20, 22, 24, 26, 28, 30°C)
+    states = [18, 20, 22, 24, 26, 28, 30]
+    actions = [-2, -1, 0, 1, 2]  # delta setpoint suhu
 
-    env = make_vec_env(BEMEnv, n_envs=1)
-    rl_model = PPO("MlpPolicy", env, verbose=0)
-    rl_model.learn(total_timesteps=1000)  # training sederhana
+    # Q-table (inisialisasi nol)
+    Q = np.zeros((len(states), len(actions)))
 
-    st.write("Simulasi RL dilakukan! Hasil optimalisasi: Penghematan energi ~25% (dari baseline 200 kWh ke 150 kWh).")
-    st.info("Ini simulasi sederhana RL untuk optimal control. Di real, bisa pakai EnergyPlus untuk environment.")
+    # Fungsi reward (minimize energi sambil jaga comfort 22-26°C)
+    def get_reward(temp):
+        energy = abs(temp - 24) * 10  # semakin jauh dari 24°C, energi lebih boros
+        comfort_penalty = 0 if 22 <= temp <= 26 else 50
+        return - (energy + comfort_penalty)
 
-# Footer (tetap)
-st.markdown("---")
-st.caption("Zhou, X., et al. (2024). Energy, 307, 132636. DOI: 10.1016/j.energy.2024.132636")
+    # Training sederhana
+    for _ in range(episodes):
+        state_idx = random.randint(0, len(states)-1)
+        state = states[state_idx]
+
+        # Epsilon-greedy action selection
+        if random.uniform(0, 1) < exploration_rate:
+            action_idx = random.randint(0, len(actions)-1)
+        else:
+            action_idx = np.argmax(Q[state_idx])
+
+        action = actions[action_idx]
+        new_temp = max(18, min(30, state + action))
+        new_state_idx = states.index(new_temp)
+
+        reward = get_reward(new_temp)
+
+        # Q-learning update
+        Q[state_idx, action_idx] = Q[state_idx, action_idx] + learning_rate * (
+            reward + discount_factor * np.max(Q[new_state_idx]) - Q[state_idx, action_idx]
+        )
+
+    # Hasil optimal policy
+    optimal_policy = np.argmax(Q, axis=1)
+    optimal_actions = [actions[i] for i in optimal_policy]
+
+    # Hitung penghematan
+    baseline_energy = sum(abs(s - 24) * 10 + (50 if not 22 <= s <= 26 else 0) for s in states) / len(states)
+    optimized_energy = sum(abs(states[i] + optimal_actions[i] - 24) * 10 + (50 if not 22 <= states[i] + optimal_actions[i] <= 26 else 0) for i in range(len(states))) / len(states)
+    saving = (baseline_energy - optimized_energy) / baseline_energy * 100
+
+    st.success(f"Simulasi RL selesai! Potensi penghematan energi: **{saving:.1f}%**")
+    st.write("Policy optimal (delta setpoint suhu):")
+    policy_df = pd.DataFrame({
+        "Suhu Saat Ini (°C)": states,
+        "Aksi Optimal (Delta °C)": optimal_actions,
+        "Suhu Target (°C)": [states[i] + optimal_actions[i] for i in range(len(states))]
+    })
+    st.dataframe(policy_df)
+
+    st.info("Ini simulasi Q-Learning sederhana untuk demonstrasi konsep RL di BEM. Di penelitian lanjutan, bisa gunakan DDPG/PPO dengan environment EnergyPlus untuk hasil lebih akurat.")
 
         
 # Footer
 st.markdown("---")
 
 st.caption("Zakky Firdaus, Desmawan Tri Wibisono, Yunifer Yosef Silalahi. (2025). Energy, 307, 132636. DOI: 10.1016/j.energy.2024.132636")
+
 
 
 

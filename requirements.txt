@@ -5,3 +5,6 @@ scikit-learn
 matplotlib
 seaborn
 plotly
+gym
+stable-baselines3
+torch  # diperlukan stable-baselines3

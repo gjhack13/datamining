@@ -209,41 +209,38 @@ with tab2:
         st.download_button("Download Hasil Clustering (CSV)", csv, "clustering_result.csv", "text/csv")
 
 
-# TAB 3 – OPTIMALISASI RL (VERSI RINGAN, TIDAK PERLU INSTALL GYM)
 with tab3:
     st.header("Optimalisasi Energi dengan Reinforcement Learning (RL)")
     st.write("**Inspirasi dari Section 4.3 jurnal Zhou et al. (2024):** RL digunakan untuk optimal control guna meningkatkan efficiency, demand flexibility, dan kenyamanan termal.")
 
     st.write("### Simulasi Sederhana RL (Q-Learning) untuk Atur Setpoint Suhu")
 
-    # Simulasi RL sederhana tanpa library eksternal
     import random
 
     # Parameter simulasi
-    episodes = 100
+    episodes = 200
     learning_rate = 0.1
     discount_factor = 0.95
     exploration_rate = 0.3
 
-    # State: suhu ruangan (diskrit: 18, 20, 22, 24, 26, 28, 30°C)
+    # State: suhu ruangan (diskrit)
     states = [18, 20, 22, 24, 26, 28, 30]
-    actions = [-2, -1, 0, 1, 2]  # delta setpoint suhu
+    actions = [-2, -1, 0, 1, 2]  # delta setpoint
 
-    # Q-table (inisialisasi nol)
+    # Q-table
     Q = np.zeros((len(states), len(actions)))
 
-    # Fungsi reward (minimize energi sambil jaga comfort 22-26°C)
+    # Reward function
     def get_reward(temp):
-        energy = abs(temp - 24) * 10  # semakin jauh dari 24°C, energi lebih boros
+        energy = abs(temp - 24) * 10
         comfort_penalty = 0 if 22 <= temp <= 26 else 50
         return - (energy + comfort_penalty)
 
-    # Training sederhana
+    # Training
     for _ in range(episodes):
         state_idx = random.randint(0, len(states)-1)
         state = states[state_idx]
 
-        # Epsilon-greedy action selection
         if random.uniform(0, 1) < exploration_rate:
             action_idx = random.randint(0, len(actions)-1)
         else:
@@ -251,26 +248,26 @@ with tab3:
 
         action = actions[action_idx]
         new_temp = max(18, min(30, state + action))
-        new_state_idx = states.index(new_temp)
+
+        # FIX: Cari index terdekat
+        new_state_idx = min(range(len(states)), key=lambda i: abs(states[i] - new_temp))
 
         reward = get_reward(new_temp)
 
-        # Q-learning update
         Q[state_idx, action_idx] = Q[state_idx, action_idx] + learning_rate * (
             reward + discount_factor * np.max(Q[new_state_idx]) - Q[state_idx, action_idx]
         )
 
-    # Hasil optimal policy
-    optimal_policy = np.argmax(Q, axis=1)
-    optimal_actions = [actions[i] for i in optimal_policy]
+    # Policy optimal
+    optimal_actions = [actions[i] for i in np.argmax(Q, axis=1)]
 
     # Hitung penghematan
-    baseline_energy = sum(abs(s - 24) * 10 + (50 if not 22 <= s <= 26 else 0) for s in states) / len(states)
-    optimized_energy = sum(abs(states[i] + optimal_actions[i] - 24) * 10 + (50 if not 22 <= states[i] + optimal_actions[i] <= 26 else 0) for i in range(len(states))) / len(states)
-    saving = (baseline_energy - optimized_energy) / baseline_energy * 100
+    baseline = sum(abs(s - 24) * 10 + (50 if not 22 <= s <= 26 else 0) for s in states) / len(states)
+    optimized = sum(abs(states[i] + optimal_actions[i] - 24) * 10 + (50 if not 22 <= states[i] + optimal_actions[i] <= 26 else 0) for i in range(len(states))) / len(states)
+    saving = (baseline - optimized) / baseline * 100 if baseline > 0 else 0
 
-    st.success(f"Simulasi RL selesai! Potensi penghematan energi: **{saving:.1f}%**")
-    st.write("Policy optimal (delta setpoint suhu):")
+    st.success(f"Simulasi RL selesai! Potensi penghematan: **{saving:.1f}%**")
+
     policy_df = pd.DataFrame({
         "Suhu Saat Ini (°C)": states,
         "Aksi Optimal (Delta °C)": optimal_actions,
@@ -278,13 +275,13 @@ with tab3:
     })
     st.dataframe(policy_df)
 
-    st.info("Ini simulasi Q-Learning sederhana untuk demonstrasi konsep RL di BEM. Di penelitian lanjutan, bisa gunakan DDPG/PPO dengan environment EnergyPlus untuk hasil lebih akurat.")
-
+    st.info("Simulasi Q-Learning sederhana untuk demonstrasi konsep RL di BEM (Section 4.3 jurnal).")
         
 # Footer
 st.markdown("---")
 
 st.caption("Zakky Firdaus, Desmawan Tri Wibisono, Yunifer Yosef Silalahi. (2025). Energy, 307, 132636. DOI: 10.1016/j.energy.2024.132636")
+
 
 
 
